@@ -1,0 +1,23 @@
+{
+  "name": "premiere-pro-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Adobe Premiere Pro — control Premiere Pro from Claude via 170+ tools",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["mcp", "premiere-pro", "adobe", "video-editing", "claude", "ai"],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "port": 8097,
+  "elevenlabs": {
+    "api_key": "",
+    "default_voice_id": "21m00Tcm4TlvDq8ikWAM",
+    "default_model": "eleven_multilingual_v2"
+  }
+}
