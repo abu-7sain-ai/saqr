@@ -1,14 +1,40 @@
+import { createServer, IncomingMessage, ServerResponse } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { loadConfig } from "./config.js";
 
-const WS_PORT = loadConfig().port;
+const configuredPort = loadConfig().port;
+const WS_PORT = Number(process.env.PORT || configuredPort);
+const HOST = process.env.HOST || "0.0.0.0";
 const TIMEOUT_MS = 30000;
 
 let cepSocket: WebSocket | null = null;
 let pendingRequests = new Map<string, { resolve: (v: any) => void; reject: (e: Error) => void }>();
 let requestId = 0;
 
-const wss = new WebSocketServer({ port: WS_PORT });
+const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+  const url = req.url || "/";
+  if (url === "/" || url === "/health" || url === "/healthz") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok", service: "premiere-pro-mcp-bridge" }));
+    return;
+  }
+
+  res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end("Not Found");
+});
+
+const wss = new WebSocketServer({ noServer: true });
+
+httpServer.on("upgrade", (req, socket) => {
+  if (req.url === "/" || req.url === "/ws" || req.url === "/socket" || req.url === "") {
+    wss.handleUpgrade(req, socket, Buffer.alloc(0), (ws) => {
+      wss.emit("connection", ws, req);
+    });
+    return;
+  }
+
+  socket.destroy();
+});
 
 // Don't let a port conflict crash the whole MCP process.
 // Every Claude window spawns its own `node server.js`, but only one can bind
@@ -58,7 +84,13 @@ wss.on("connection", (ws) => {
   });
 });
 
-console.error(`[Bridge] WebSocket server listening on port ${WS_PORT}`);
+httpServer.on("error", (err: NodeJS.ErrnoException) => {
+  console.error("[Bridge] HTTP server error:", err);
+});
+
+httpServer.listen(WS_PORT, HOST, () => {
+  console.error(`[Bridge] WebSocket server listening on ${HOST}:${WS_PORT}`);
+});
 
 export function isConnected(): boolean {
   return cepSocket !== null && cepSocket.readyState === WebSocket.OPEN;
